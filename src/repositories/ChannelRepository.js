@@ -3,32 +3,39 @@ export default class ChannelRepository {
   constructor(pool) {
     this.pool = pool;
   }
+
   async upsertChannel({ channelId, channelName, channelImageUrl }) {
-    console.log("db저장시작", channelId, channelName, channelImageUrl);
     const sql = `
       INSERT INTO CHZZK_CHANNELS (channel_id, channel_name, profile_image_url)
       VALUES ($1, $2, $3)
       ON CONFLICT (channel_id) 
-      DO UPDATE SET channel_name = EXCLUDED.channel_name,
-                    profile_image_url = EXCLUDED.profile_image_url,
-                    updated_at = NOW();
+      DO UPDATE SET 
+        channel_name = EXCLUDED.channel_name,
+        profile_image_url = EXCLUDED.profile_image_url,
+        updated_at = CASE 
+          WHEN 
+            CHZZK_CHANNELS.channel_name IS DISTINCT FROM EXCLUDED.channel_name OR
+            CHZZK_CHANNELS.profile_image_url IS DISTINCT FROM EXCLUDED.profile_image_url
+          THEN NOW() 
+          ELSE CHZZK_CHANNELS.updated_at 
+        END
+      RETURNING id;
     `;
     const binds = [channelId, channelName, channelImageUrl];
     try {
-      await this.pool.query(sql, binds);
-      console.log(`[ChannelRepository] 채널 저장/업데이트: ${channelId}`);
-      return true;
+      const res = await this.pool.query(sql, binds);
+      return res.rows[0] || null; // PK 반환 위해
     } catch (err) {
       console.error("[ChannelRepository] upsertChannel 실패:", err.message);
-      return false;
+      return null;
     }
   }
 
   async findAll() {
     const sql = `SELECT * FROM CHZZK_CHANNELS`;
     try {
-      const result = await this.pool.query(sql);
-      return result.rows;
+      const res = await this.pool.query(sql);
+      return res.rows;
     } catch (err) {
       console.error("[ChannelRepository] findAll 실패:", err.message);
       return [];
@@ -36,13 +43,30 @@ export default class ChannelRepository {
   }
 
   // 채널 하나만 가져오기
-  async findChannel(channelId) {
+  async findByChannel({ channelId }) {
     const sql = `SELECT * FROM CHZZK_CHANNELS WHERE channel_id = $1 LIMIT 1`;
     try {
-      const result = await this.pool.query(sql, [channelId]);
-      return result.rows[0] || null; // 없으면 null 반환
+      const res = await this.pool.query(sql, [channelId]);
+      return res.rows[0] || null;
     } catch (err) {
-      console.error(`[ChannelRepository] findChannel 실패: ${err.message}`);
+      console.error(`[ChannelRepository] findByChannel 실패: ${err.message}`);
+      return null;
+    }
+  }
+
+  async findByPK({ channelPK }) {
+    const sql = `
+      SELECT 
+        id, channel_id, channel_name, profile_image_url 
+      FROM CHZZK_CHANNELS
+      WHERE id = $1
+      LIMIT 1
+    `;
+    try {
+      const res = await this.pool.query(sql, [channelPK]);
+      return res.rows[0] || null;
+    } catch (err) {
+      console.error("[ChannelRepository] findByPK 실패:", err.message);
       return null;
     }
   }

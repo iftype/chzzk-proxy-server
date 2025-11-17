@@ -2,37 +2,53 @@ import getChzzkApiResponse from "../api/chzzk-Api.js";
 import Channel from "../models/Channel.js";
 
 class ChannelService {
-  #API_BASE_URL = process.env.API_BASE_URL;
+  #API_BASE_URL;
   #channelRepository;
 
   constructor({ channelRepository }) {
+    this.#API_BASE_URL = process.env.API_BASE_URL;
     this.#channelRepository = channelRepository;
   }
 
-  // 컨트롤러에서 쓸 find 들
-
   // 다가져오기
   async getChannelAllData() {
-    return this.#channelRepository.findAll();
-  }
-  async getChannelData(channelId) {
-    return this.#channelRepository.findAll();
+    return await this.#channelRepository.findAll();
   }
 
-  // polling 에서 쓸 거
+  async getChannelData(channelId) {
+    return await this.#channelRepository.findByChannel({ channelId });
+  }
+
+  async getChannelByPK(channelPK) {
+    return await this.#channelRepository.findByPK({ channelPK });
+  }
+
+  async getChannelId(channelId) {
+    const channelRow = await this.#channelRepository.findByChannel({ channelId });
+    return channelRow.id;
+  }
+
+  async getOrCreateChannelId({ channelId }) {
+    const channelData = await this.getChannelData(channelId);
+
+    if (channelData?.id) {
+      return channelData.id;
+    }
+    const newChannelData = await this.updateChannelState(channelId);
+    return newChannelData?.id ?? null;
+  }
+
   async updateChannelState(channelId) {
-    // 방송 중 아니면 return
-    const channelInstance = await this.#getChannel(channelId);
+    const channelInstance = await this.getChannel(channelId);
     if (!(channelInstance instanceof Channel)) {
       console.log(`[채널 서비스 Polling Error not instance of Channel]`);
-      return;
+      return null;
     }
-    const data = channelInstance.toDbData();
-    console.log(data);
-    this.#channelRepository.upsertChannel(data);
+    const channelRow = channelInstance.toDB();
+    return await this.#channelRepository.upsertChannel(channelRow);
   }
 
-  async #getChannel(channelId) {
+  async getChannel(channelId) {
     const apiUrl = `${this.#API_BASE_URL}/service/v1/channels/${channelId}`;
     console.log(`[서비스 풀링 요청]:  ${new Date().toLocaleTimeString()} 호출 `);
 

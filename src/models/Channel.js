@@ -9,7 +9,7 @@ class Channel {
     this.channelImageUrl = channelImageUrl || null;
   }
 
-  toDbData() {
+  toDB() {
     return {
       channelId: this.channelId,
       channelName: this.channelName,
