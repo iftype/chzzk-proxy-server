@@ -5,15 +5,15 @@ export default class LiveLogRepository {
     this.pool = pool;
   }
 
-  // 완성
-  async save({ channelId, liveTitle, openDate, closeDate, categoryId }) {
+  // 사용: DB에 저장용 polling에서만 사용 여기 치지직id와 categoryId는 PK임
+  async save({ channelId, sessionId, liveTitle, openDate, closeDate, categoryId }) {
     const sql = `
-    INSERT INTO CHZZK_LOGS (channel_id, live_title, open_date, close_date, live_category_id)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO CHZZK_LOGS (channel_id, broadcast_session_id, live_title, open_date, close_date, live_category_id)
+    VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING id;
     `;
 
-    const binds = [channelId, liveTitle, openDate, closeDate, categoryId];
+    const binds = [channelId, sessionId, liveTitle, openDate, closeDate, categoryId];
     try {
       const res = await this.pool.query(sql, binds);
       return res.rows[0];
@@ -23,29 +23,30 @@ export default class LiveLogRepository {
     }
   }
 
-  // 방송 종료시 방송종료 필드 업데이트
-  async updateCloseDate({ channelPK, closeDate, openDate }) {
+  // 사용: 방송 종료시 방송종료 필드 업데이트 - 세션으로
+  async updateCloseDate({ sessionId, closeDate }) {
     const sql = `
         UPDATE CHZZK_LOGS
         SET close_date = $1
-        WHERE channel_id = $2
-          AND open_date = $3
-          AND close_date IS NULL
+        WHERE broadcast_session_id = $2 
+          AND close_date IS NULL   
         RETURNING id;
     `;
-    const binds = [closeDate, channelPK, openDate];
+    const binds = [closeDate, sessionId];
+
     try {
       const res = await this.pool.query(sql, binds);
-      return (await res.rows[0]) || null;
+      return res.rows.length;
     } catch (err) {
-      return null;
+      console.error("[LiveLogRepository] updateCloseDate 실패:", err.message);
+      return 0;
     }
   }
 
   // 풀링에서 쓰는 거 / 현재 방송 중인 가장 최근 값 가져옴
-  async findLastLiveBroadcast({ channelId }) {
+  async findLastLiveBroadcast({ channelPK }) {
     const sql = `
-    SELECT *
+    SELECT id, live_title, live_category_id, broadcast_session_id, open_date, close_date
     FROM CHZZK_LOGS
     WHERE channel_id = $1
       AND close_date IS NULL
@@ -53,10 +54,10 @@ export default class LiveLogRepository {
     LIMIT 1
   `;
     try {
-      const res = await this.pool.query(sql, [channelId]);
-      return res.rows[0];
+      const res = await this.pool.query(sql, [channelPK]);
+      return res.rows[0] || null;
     } catch (err) {
-      console.error("[ChannelRepository] findLastLiveBroadcast 실패:", err.message);
+      console.error("[LiveLogRepo] findLastLiveBroadcast 실패:", err.message);
       return null;
     }
   }
@@ -81,25 +82,58 @@ export default class LiveLogRepository {
     }
   }
 
-  // 마지막 방송종료
-  async findLastEndedBroadcast(channelId) {
+  // 사용: 마지막 방송종료된 기록 - 비디오에서사용
+  async findLastClosedLiveLogEmptyVideo({ channelPK }) {
     const sql = `
     SELECT *
     FROM CHZZK_LOGS
     WHERE channel_id = $1
       AND close_date IS NOT NULL
+      AND video_id IS NULL
     ORDER BY close_date DESC
     LIMIT 1
   `;
-
     try {
-      const result = await this.pool.query(sql, [channelId]);
+      const result = await this.pool.query(sql, [channelPK]);
       return result.rows[0] || null;
     } catch (err) {
       console.error("[ChannelRepository] findLastEndedBroadcast 실패:", err.message);
       return null;
     }
   }
+
+  // 해당 세션방송 전부 가져오기
+  async findLiveLogsBySessionId({ sessionId }) {
+    const sql = `
+    SELECT *
+    FROM CHZZK_LOGS
+    WHERE 
+      broadcast_session_id = $1;
+  `;
+    try {
+      const result = await this.pool.query(sql, [sessionId]);
+      return result.rows || null;
+    } catch (err) {
+      console.error("[LogRepository] findLiveLogsBySessionId 실패:", err.message);
+      return null;
+    }
+  }
+
+  async updateVideoIdBySessionId({ sessionId, videoId }) {
+    const sql = `
+            UPDATE CHZZK_LOGS
+            SET video_id = $1
+            WHERE broadcast_session_id = $2;
+        `;
+    try {
+      const result = await this.pool.query(sql, [videoId, sessionId]);
+      return result.rowCount || 0;
+    } catch (err) {
+      console.error("[LogRepository] updateVideoIdBySessionId 실패:", err.message);
+      return 0;
+    }
+  }
+
   // 특정 채널의 카테고리로 전부 가져오기
   async findByChannelAndCategory(channelId, categoryValue) {
     const sql = `

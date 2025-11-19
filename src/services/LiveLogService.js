@@ -21,7 +21,18 @@ class LiveLogService {
   // 현재 방송 중에서 가장 최근값 가져오기 캐시용
   async findLastLiveBroadcast(channelId) {
     const channelPK = await this.#channelService.getChannelId(channelId);
-    return await this.#liveLogRepository.findLastLiveBroadcast({ channelId: channelPK });
+    return await this.#liveLogRepository.findLastLiveBroadcast({ channelPK });
+  }
+
+  // 종료된 방송 중에서 가장 최근값 가져오기 비디오용
+  async findLastClosedLiveLogEmptyVideo(channelId) {
+    const channelPK = await this.#channelService.getChannelId(channelId);
+    return await this.#liveLogRepository.findLastClosedLiveLogEmptyVideo({ channelPK });
+  }
+
+  // 해당 세션으로 검색: 배열 형태로 반환함
+  async findLiveLogsBySessionId(sessionId) {
+    return await this.#liveLogRepository.findLiveLogsBySessionId({ sessionId });
   }
 
   // DB에 채널 데이터 저장하기
@@ -37,15 +48,19 @@ class LiveLogService {
       this.#API_BASE_URL
     }/service/v3.2/channels/${channelId}/live-detail?dt=${dtValue}`;
     console.log(`[서비스 풀링 요청]:  ${new Date().toLocaleTimeString()} 호출 `);
-
     const resContent = await getChzzkApiResponse(apiUrl);
     const liveLogContent = LiveLog.fromApiContent(resContent);
     return new LiveLog(liveLogContent);
   }
 
-  async updateCloseDate({ channelId, closeDate, openDate }) {
-    const channelPK = await this.#channelService.getChannelId(channelId);
-    this.#liveLogRepository.updateCloseDate({ channelPK, closeDate, openDate });
+  // CLOSE 에서 사용
+  async updateCloseDate({ sessionId, closeDate }) {
+    return await this.#liveLogRepository.updateCloseDate({ sessionId, closeDate });
+  }
+
+  // Video업데이트용
+  async updateVideoIdBySessionId({ sessionId, videoId }) {
+    return await this.#liveLogRepository.updateVideoIdBySessionId({ sessionId, videoId });
   }
 }
 export default LiveLogService;
