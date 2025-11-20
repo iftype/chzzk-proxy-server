@@ -1,24 +1,51 @@
 class Category {
-  liveCategory; // 카테고리(영어)
-  liveCategoryValue; // 라이브 카테고리 값(한글임)
-  categoryType; // 타입
-  image_url; // 이미지
+  #categoryPK;
+  #categoryId;
+  #categoryValue;
+  #categoryType;
+  #categoryImageUrl;
 
-  constructor({ liveCategory, liveCategoryValue, categoryType, image_url }) {
-    this.liveCategory = liveCategory;
-    this.liveCategoryValue = liveCategoryValue;
-    this.categoryType = categoryType;
-    this.image_url = image_url || null;
+  constructor({
+    categoryPK = null,
+    categoryId,
+    categoryValue,
+    categoryType,
+    categoryImageUrl = null,
+  }) {
+    this.#categoryPK = categoryPK;
+    this.#categoryId = categoryId;
+    this.#categoryValue = categoryValue;
+    this.#categoryType = categoryType;
+    this.#categoryImageUrl = categoryImageUrl;
+  }
+
+  get categoryPK() {
+    return this.#categoryPK;
+  }
+
+  get categoryId() {
+    return this.#categoryId;
   }
 
   toDB() {
     return {
-      liveCategory: this.liveCategory,
-      liveCategoryValue: this.liveCategoryValue,
-      categoryType: this.categoryType,
-      image_url: this.image_url,
+      id: this.#categoryPK,
+      category_id: this.#categoryId,
+      category_value: this.#categoryValue,
+      category_type: this.#categoryType,
+      category_image_url: this.#categoryImageUrl,
     };
   }
-}
 
+  static fromDBRow(row) {
+    if (!row) return null;
+    return new Category({
+      categoryPK: row.id,
+      categoryId: row.category_id,
+      categoryValue: row.category_value,
+      categoryType: row.category_type,
+      categoryImageUrl: row.category_image_url,
+    });
+  }
+}
 export default Category;

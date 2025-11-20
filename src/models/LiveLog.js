@@ -1,61 +1,74 @@
 class LiveLog {
-  channelId; //현재 채널 ID;
-  liveTitle; // 제목
-  status; // 방송 중인지 OPEN / CLOSE
-  openDate; // 방송 시작 날짜
-  closeDate; // 방송 종료 날짜
-  categoryType; // 카테고리 타입 GAME / ETC
-  liveCategory; // 카테고리(영어)
-  liveCategoryValue; // 라이브 카테고리 값(한글임)
+  #liveLogPK;
+  #liveSessionId;
+  #channelPK;
+  #categoryPK;
+  #videoPK;
+  #liveTitle;
+  #openDate;
+  #closeDate;
 
   constructor({
-    channelId,
+    liveLogPK = null,
+    liveSessionId,
+    channelPK,
+    categoryPK,
+    videoPK = null,
     liveTitle,
-    status,
     openDate,
-    closeDate,
-    categoryType,
-    liveCategory,
-    liveCategoryValue,
+    closeDate = null,
   }) {
-    this.channelId = channelId || null;
-    this.liveTitle = liveTitle || null;
-    this.status = status || null;
-    this.openDate = openDate ? new Date(openDate) : null;
-    this.closeDate = closeDate ? new Date(closeDate) : null;
-    this.categoryType = categoryType || null;
-    this.liveCategory = liveCategory || null;
-    this.liveCategoryValue = liveCategoryValue || null;
-  }
-
-  static fromApiContent(content) {
-    if (!content) {
-      return new LiveLog({});
-    }
-    return new LiveLog({
-      channelId: content.channel?.channelId || content.channelId || null,
-      liveTitle: content.liveTitle,
-      status: content.status,
-      openDate: content.openDate,
-      closeDate: content.closeDate,
-      categoryType: content.categoryType,
-      liveCategory: content.liveCategory,
-      liveCategoryValue: content.liveCategoryValue,
-    });
+    this.#liveLogPK = liveLogPK;
+    this.#channelPK = channelPK;
+    this.#categoryPK = categoryPK;
+    this.#videoPK = videoPK;
+    this.#liveSessionId = liveSessionId;
+    this.#liveTitle = liveTitle;
+    this.#openDate = openDate;
+    this.#closeDate = closeDate;
   }
 
   toDB() {
     return {
-      channelId: this.channelId,
-      liveTitle: this.liveTitle,
-      openDate: this.openDate,
-      closeDate: this.closeDate,
-      status: this.status,
-      categoryType: this.categoryType,
-      liveCategory: this.liveCategory,
-      liveCategoryValue: this.liveCategoryValue,
+      id: this.#liveLogPK,
+      channel_pk: this.#channelPK,
+      category_pk: this.#categoryPK,
+      video_pk: this.#videoPK,
+      live_session_id: this.#liveSessionId,
+      live_title: this.#liveTitle,
+      live_open_date: this.#openDate,
+      live_close_date: this.#closeDate,
+    };
+  }
+
+  static fromDBRow(row) {
+    if (!row) return null;
+    return new LiveLog({
+      liveLogPK: row.id,
+      liveSessionId: row.live_session_id,
+      channelPK: row.channel_pk,
+      categoryPK: row.category_pk,
+      videoPK: row.video_pk,
+      liveTitle: row.live_title,
+      openDate: row.live_open_date,
+      closeDate: row.live_close_date,
+    });
+  }
+
+  toCache() {
+    return {
+      categoryPK: this.#categoryPK,
+      liveSessionId: this.#liveSessionId,
+      liveTitle: this.#liveTitle,
+    };
+  }
+
+  toVideoMatch() {
+    return {
+      broadcast_session_id: this.#liveSessionId,
+      live_title: this.#liveTitle,
+      close_date: this.#closeDate,
     };
   }
 }
-
 export default LiveLog;

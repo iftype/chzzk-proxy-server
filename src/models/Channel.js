@@ -1,20 +1,40 @@
 class Channel {
-  channelId;
-  channelName;
-  channelImageUrl;
+  #channelPK;
+  #channelId;
+  #channelName;
+  #channelImageUrl;
 
-  constructor({ channelId, channelName, channelImageUrl }) {
-    this.channelId = channelId || null;
-    this.channelName = channelName || null;
-    this.channelImageUrl = channelImageUrl || null;
+  constructor({ channelPK = null, channelId, channelName, channelImageUrl }) {
+    this.#channelPK = channelPK;
+    this.#channelId = channelId;
+    this.#channelName = channelName;
+    this.#channelImageUrl = channelImageUrl;
+  }
+
+  get channelPK() {
+    return this.#channelPK;
+  }
+
+  get channelId() {
+    return this.#channelId;
   }
 
   toDB() {
     return {
-      channelId: this.channelId,
-      channelName: this.channelName,
-      channelImageUrl: this.channelImageUrl,
+      channel_id: this.#channelId,
+      channel_name: this.#channelName,
+      channel_image_url: this.#channelImageUrl,
     };
+  }
+
+  static fromDBRow(row) {
+    if (!row) return null;
+    return new Channel({
+      channelPK: row.id,
+      channelId: row.channel_id,
+      channelName: row.channel_name,
+      channelImageUrl: row.channel_image_url,
+    });
   }
 }
 export default Channel;

@@ -35,24 +35,25 @@ class PostgreDB {
     try {
       // 1. CHANNELS
       await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS CHZZK_CHANNELS (
-        id SERIAL PRIMARY KEY,
-        channel_id VARCHAR(100) NOT NULL UNIQUE,
-        channel_name VARCHAR(100) NOT NULL,
-        profile_image_url TEXT,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+        CREATE TABLE IF NOT EXISTS CHZZK_CHANNELS (
+          id SERIAL PRIMARY KEY,
+          channel_id VARCHAR(100) NOT NULL UNIQUE,
+          channel_name VARCHAR(100) NOT NULL,
+          channel_image_url TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
 
       // 2. CHZZK_CATEGORIES
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS CHZZK_CATEGORIES (
           id SERIAL PRIMARY KEY,
-          value VARCHAR(100) UNIQUE NOT NULL,
-          name VARCHAR(100) NOT NULL,
-          type VARCHAR(100) NOT NULL,
-          image_url TEXT
+          category_id VARCHAR(100) UNIQUE NOT NULL,
+          category_value TEXT NOT NULL,
+          category_type VARCHAR(100) NOT NULL,
+          category_image_url TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
 
@@ -61,26 +62,26 @@ class PostgreDB {
         CREATE TABLE IF NOT EXISTS CHZZK_VIDEOS (
           id SERIAL PRIMARY KEY,
           video_id VARCHAR(100) NOT NULL UNIQUE,
-          title TEXT,
-          channel_id INT REFERENCES CHZZK_CHANNELS(id),
+          video_title TEXT,
+          channel_pk INT REFERENCES CHZZK_CHANNELS(id),
           publish_date TIMESTAMP WITH TIME ZONE,
-          thumbnail_url TEXT,
-          duration INT,
+          video_thumbnail_url TEXT,
+          video_duration INT,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
 
       // 4. CHZZK_LOGS
       await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS CHZZK_LOGS (
+        CREATE TABLE IF NOT EXISTS CHZZK_LIVE_LOGS (
           id SERIAL PRIMARY KEY,
-          broadcast_session_id VARCHAR(50) NOT NULL,
-          channel_id INT REFERENCES CHZZK_CHANNELS(id),
+          channel_pk INT REFERENCES CHZZK_CHANNELS(id),
+          live_session_id VARCHAR(50) NOT NULL,
           live_title TEXT,
-          open_date TIMESTAMP WITH TIME ZONE,
-          close_date TIMESTAMP WITH TIME ZONE,
-          live_category_id INT REFERENCES CHZZK_CATEGORIES(id),
-          video_id INT REFERENCES CHZZK_VIDEOS(id),
+          live_open_date TIMESTAMP WITH TIME ZONE,
+          live_close_date TIMESTAMP WITH TIME ZONE,
+          video_pk INT REFERENCES CHZZK_VIDEOS(id),
+          category_pk INT REFERENCES CHZZK_CATEGORIES(id),
           log_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
