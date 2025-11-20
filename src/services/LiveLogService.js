@@ -1,66 +1,112 @@
 import LiveLog from "../models/LiveLog.js";
+import ApiLiveLogDTO from "../dtos/response/ApiLiveLogDTO.js";
 import getChzzkApiResponse from "../api/chzzk-Api.js";
+import { generateSessionId } from "../utils/session.js";
 
 class LiveLogService {
   #API_BASE_URL = process.env.API_BASE_URL;
   #liveLogRepository;
-  #categoryService;
   #channelService;
+  #categoryService;
+  #liveLogCache;
 
-  constructor({ liveLogRepository, categoryService, channelService }) {
-    this.#liveLogRepository = liveLogRepository;
-    this.#categoryService = categoryService;
+  constructor({ channelService, categoryService, videoService, liveLogRepository }) {
     this.#channelService = channelService;
+    this.#categoryService = categoryService;
+    this.#liveLogRepository = liveLogRepository;
+    this.#liveLogCache = new Map();
   }
 
-  // 한 채널의 정보 전부 가져오기
-  async getStoredChannelData(channelId) {
-    return await this.#liveLogRepository.findAllByChannel(channelId);
-  }
-
-  // 현재 방송 중에서 가장 최근값 가져오기 캐시용
-  async findLastLiveBroadcast(channelId) {
-    const channelPK = await this.#channelService.getChannelId(channelId);
-    return await this.#liveLogRepository.findLastLiveBroadcast({ channelPK });
-  }
-
-  // 종료된 방송 중에서 가장 최근값 가져오기 비디오용
-  async findLastClosedLiveLogEmptyVideo(channelId) {
-    const channelPK = await this.#channelService.getChannelId(channelId);
-    return await this.#liveLogRepository.findLastClosedLiveLogEmptyVideo({ channelPK });
-  }
-
-  // 해당 세션으로 검색: 배열 형태로 반환함
-  async findLiveLogsBySessionId(sessionId) {
-    return await this.#liveLogRepository.findLiveLogsBySessionId({ sessionId });
-  }
-
-  // DB에 채널 데이터 저장하기
-  async saveChannelData(channel) {
-    await this.#liveLogRepository.save(channel);
-  }
-
-  // polling에서 사용
-  async getLiveLogData(channelId) {
-    const currentTimeHex = Date.now().toString(16);
-    const dtValue = currentTimeHex.slice(-5);
+  async getLiveLogFromApi(channelId) {
+    const dtValue = Date.now().toString(16).slice(-5);
     const apiUrl = `${
       this.#API_BASE_URL
     }/service/v3.2/channels/${channelId}/live-detail?dt=${dtValue}`;
-    console.log(`[서비스 풀링 요청]:  ${new Date().toLocaleTimeString()} 호출 `);
     const resContent = await getChzzkApiResponse(apiUrl);
-    const liveLogContent = LiveLog.fromApiContent(resContent);
-    return new LiveLog(liveLogContent);
+    return new ApiLiveLogDTO(resContent);
   }
 
-  // CLOSE 에서 사용
-  async updateCloseDate({ sessionId, closeDate }) {
-    return await this.#liveLogRepository.updateCloseDate({ sessionId, closeDate });
+  async processLiveLog(channelId) {
+    const liveLogDto = await this.getLiveLogFromApi(channelId);
+
+    const logData = liveLogDto.toProcessLiveLogData();
+    const { liveTitle, categoryId, categoryType, isLive, closeDate } = logData;
+    const cachedLog = this.#liveLogCache.get(channelId);
+    const sessionId = cachedLog ? cachedLog.liveSessionId : generateSessionId();
+
+    const { categoryPK } = await this.#categoryService.getOrCreateCategoryPK({
+      categoryId,
+      categoryType,
+    });
+
+    const categoryChanged = categoryPK !== cachedLog?.categoryPK;
+    const titleChanged = liveTitle !== cachedLog?.liveTitle;
+
+    // 방송 종료일 때 처리
+    if (!isLive && cachedLog) {
+      await this.#liveLogRepository.updateSessionCloseDate(cachedLog.liveSessionId, closeDate);
+      this.#liveLogCache.set(channelId, null); // 캐시 클리어
+      return { isLive, closeDate };
+    }
+
+    // 방송 종료인데 캐시도없으면 걍 넘어감
+    if (!isLive && !cachedLog) {
+      return { isLive };
+    }
+
+    if (categoryChanged || titleChanged) {
+      await this.insertLiveLog(liveLogDto, sessionId);
+      return { isLive, closeDate };
+    }
+    return { isLive };
   }
 
-  // Video업데이트용
-  async updateVideoIdBySessionId({ sessionId, videoId }) {
-    return await this.#liveLogRepository.updateVideoIdBySessionId({ sessionId, videoId });
+  async insertLiveLog(liveLogDto, sessionId) {
+    const domainFields = liveLogDto.toDomainFields();
+
+    const { channelId } = domainFields;
+    const channel = await this.#channelService.getOrCreateChannelPK(channelId);
+    const { channelPK } = channel;
+
+    const { categoryId, categoryType } = domainFields;
+    const { categoryPK } = await this.#categoryService.getOrCreateCategoryPK({
+      categoryId,
+      categoryType,
+    });
+
+    const targetLiveModel = new LiveLog({
+      ...domainFields,
+      liveSessionId: sessionId,
+      channelPK,
+      categoryPK,
+    });
+    const liveLogModel = await this.#liveLogRepository.save(targetLiveModel);
+
+    if (liveLogModel) {
+      this.#liveLogCache.set(channelId, liveLogModel.toCache());
+      return liveLogModel;
+    }
+    return null;
+  }
+
+  async initializeCache(channelId) {
+    const { channelPK } = await this.#channelService.getChannelPK(channelId);
+    const logModel = await this.#liveLogRepository.findLastLiveLog({ channelPK });
+    if (!logModel) return;
+    this.#liveLogCache.set(channelId, logModel.toCache());
+  }
+
+  async findLastLogByChannelId(channelId) {
+    const { channelPK } = await this.#channelService.getChannelPK(channelId);
+    return await this.#liveLogRepository.findLastLiveLog({ channelPK });
+  }
+
+  async updateVideoIdBySessionId({ sessionId, videoPK }) {
+    return await this.#liveLogRepository.updateVideoIdBySessionId({
+      liveSessionId: sessionId,
+      videoPK,
+    });
   }
 }
+
 export default LiveLogService;
