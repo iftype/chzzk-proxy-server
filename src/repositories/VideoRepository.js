@@ -1,65 +1,78 @@
-export default class VideoRepository {
+import Video from "../models/Video.js";
+class VideoRepository {
   pool;
+
   constructor(pool) {
     this.pool = pool;
   }
 
-  async insertVideo({ videoId, title, channelId, publishDate, thumbnailUrl, duration }) {
+  async upsertVideo(video) {
     const sql = `
-        INSERT INTO CHZZK_VIDEOS 
-             (video_id, title, channel_id, publish_date, thumbnail_url, duration)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT (video_id) DO NOTHING
-        RETURNING id;
+            INSERT INTO CHZZK_VIDEOS 
+                (video_id, video_title, channel_pk, publish_date, video_thumbnail_url, video_duration)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (video_id) 
+            DO UPDATE SET 
+                video_title = EXCLUDED.video_title,
+                channel_pk = EXCLUDED.channel_pk,
+                publish_date = EXCLUDED.publish_date,
+                video_thumbnail_url = EXCLUDED.video_thumbnail_url,
+                video_duration = EXCLUDED.video_duration
+            RETURNING *;
         `;
-    const binds = [videoId, title, channelId, publishDate, thumbnailUrl, duration];
+    const dbData = video.toDB();
+    const binds = [
+      dbData.video_id,
+      dbData.video_title,
+      dbData.channel_pk,
+      dbData.publish_date,
+      dbData.video_thumbnail_url,
+      dbData.video_duration,
+    ];
     try {
       const res = await this.pool.query(sql, binds);
-      return res.rows.length > 0 ? res.rows[0].id : null;
+      return res.rows[0] ? Video.fromDBRow(res.rows[0]) : null;
     } catch (err) {
-      console.error("[VideoRepository] insertVideo 실패:", err.message);
+      console.error("[VideoRepository] upsertVideo 실패:", err.message);
       return null;
     }
   }
 
-  async findAll() {
-    const sql = `SELECT * FROM CHZZK_CHANNELS`;
+  async findByVideoId(videoId) {
+    const sql = `SELECT * FROM CHZZK_VIDEOS WHERE video_id = $1 LIMIT 1`;
     try {
-      const res = await this.pool.query(sql);
-      return res.rows;
+      const res = await this.pool.query(sql, [videoId]);
+      return res.rows[0] ? Video.fromDBRow(res.rows[0]) : null;
     } catch (err) {
-      console.error("[ChannelRepository] findAll 실패:", err.message);
+      console.error(`[VideoRepository] findByVideoId 실패: ${err.message}`);
+      return null;
+    }
+  }
+
+  async findAllByChannelPK(channelPK) {
+    const sql = `
+            SELECT * FROM CHZZK_VIDEOS 
+            WHERE channel_pk = $1
+            ORDER BY publish_date DESC
+        `;
+    try {
+      const res = await this.pool.query(sql, [channelPK]);
+      return res.rows.map((row) => Video.fromDBRow(row));
+    } catch (err) {
+      console.error("[VideoRepository] findAllByChannelPK 실패:", err.message);
       return [];
     }
   }
 
-  // 해당하는 id 값으로 찾기
-  async findByChannel({ channelId }) {
-    const sql = `SELECT * FROM CHZZK_CHANNELS WHERE channel_id = $1 LIMIT 1`;
+  async findByPK(videoPK) {
+    const sql = `SELECT * FROM CHZZK_VIDEOS WHERE id = $1 LIMIT 1`;
     try {
-      const res = await this.pool.query(sql, [channelId]);
-      return res.rows[0] || null;
+      const res = await this.pool.query(sql, [videoPK]);
+      return res.rows[0] ? Video.fromDBRow(res.rows[0]) : null;
     } catch (err) {
-      console.error(`[ChannelRepository] findByChannel 실패: ${err.message}`);
-      return null;
-    }
-  }
-  // 해당하는 키값으로 찾기
-
-  async findByPK({ videoPK }) {
-    const sql = `
-      SELECT 
-        id, channel_id, channel_name, profile_image_url 
-      FROM CHZZK_CHANNELS
-      WHERE id = $1
-      LIMIT 1
-    `;
-    try {
-      const res = await this.pool.query(sql, [channelPK]);
-      return res.rows[0] || null;
-    } catch (err) {
-      console.error("[ChannelRepository] findByPK 실패:", err.message);
+      console.error("[VideoRepository] findByPK 실패:", err.message);
       return null;
     }
   }
 }
+export default VideoRepository;
