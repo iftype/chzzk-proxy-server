@@ -16,7 +16,6 @@ class ChannelController {
   async getChannelData(req, res) {
     const reqDto = new ChannelRequestDto(req);
     const { streamerId } = reqDto;
-    console.log(streamerId);
     const resDto = await this.#channelService.responseChannel(streamerId);
     res.status(200).json({ channel: streamerId, data: resDto });
   }

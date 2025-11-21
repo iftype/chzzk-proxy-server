@@ -25,7 +25,6 @@ class VideoMatchingService {
       new Date(publishDate).getTime() - new Date(close_date).getTime() <
       VideoMatchingService.VIEDO_MATCH_STAND;
 
-    console.log(live_title, close_date);
     if (!matchedTitle && !matchedDate) {
       return { matched: false };
     }

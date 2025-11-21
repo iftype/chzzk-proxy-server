@@ -3,7 +3,7 @@ class ChannelResponseDto {
   #channelName;
   #channelImageUrl;
 
-  constructor(channelId, channelName, channelImageUrl) {
+  constructor({ channelId, channelName, channelImageUrl }) {
     this.#channelId = channelId;
     this.#channelName = channelName;
     this.#channelImageUrl = channelImageUrl;

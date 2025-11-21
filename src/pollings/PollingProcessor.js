@@ -28,7 +28,6 @@ class PollingProcessor {
 
       const { isLive, closeDate } = await this.#liveLogService.processLiveLog(channelId);
       if (isLive) {
-        console.log("풀링 중", channelId, new Date().toLocaleString());
         return PollingPolicy.getOpenInterval();
       }
       return PollingPolicy.getCloseInterval(closeDate);

@@ -214,14 +214,16 @@ export default class LiveLogRepository {
     FROM
         CHZZK_LIVE_LOGS L
     INNER JOIN CHZZK_CHANNELS C ON L.channel_pk = C.id
-    INNER JOIN CHZZK_VIDEOS V ON L.video_pk = V.id
-    INNER JOIN CHZZK_CATEGORIES G ON L.category_pk = G.id
+    LEFT  JOIN CHZZK_VIDEOS V ON L.video_pk = V.id
+    LEFT  JOIN CHZZK_CATEGORIES G ON L.category_pk = G.id
     WHERE
         L.channel_pk = $1
+    ORDER BY log_time DESC
     `;
     const binds = [channelPK];
     try {
       const result = await this.pool.query(sql, binds);
+      console.log(result.rows);
       return result.rows.map((row) => LiveLogDetail.fromDBRow(row));
     } catch (err) {
       console.error("[LiveLogRepository] findLogDetailListByDate 실패:", err.message);

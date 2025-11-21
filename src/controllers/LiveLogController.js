@@ -10,7 +10,6 @@ class LiveLogController {
   async getLiveLogs(req, res) {
     const reqDto = new LiveLogRequestDto(req);
     const { streamerId, date } = reqDto;
-    console.log(streamerId);
     if (date) {
       const resDto = await this.#liveLogService.resposeLiveLogDetailByDate({ streamerId, date });
       res.status(200).json({ data: resDto });
