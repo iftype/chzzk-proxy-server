@@ -123,7 +123,7 @@ class App {
     this.#initializeRoutes();
     this.#initializeErrorHandler();
 
-    // this.pollingSchedulerInstance.run();
+    this.pollingSchedulerInstance.run();
 
     this.app.listen(this.PORT, () => {
       console.log(`Server running http://localhost:${this.PORT}`);
