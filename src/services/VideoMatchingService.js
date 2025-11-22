@@ -35,7 +35,7 @@ class VideoMatchingService {
     }
     const { videoPK } = videoModel;
 
-    await this.#liveLogService.updateVideoIdBySessionId({
+    await this.#liveLogService.updateVideoPKBySessionId({
       sessionId: broadcast_session_id,
       videoPK,
     });

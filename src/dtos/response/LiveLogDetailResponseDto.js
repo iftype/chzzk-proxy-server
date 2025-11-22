@@ -14,7 +14,7 @@ class LiveLogDetailResponseDto {
     };
 
     this.video = {
-      id: model.video.id,
+      no: model.video.no,
       videoId: model.video.videoId,
       title: model.video.title,
       duration: model.video.duration,

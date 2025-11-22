@@ -125,7 +125,7 @@ export default class LiveLogRepository {
     }
   }
 
-  async updateVideoIdBySessionId({ liveSessionId, videoPK }) {
+  async updateVideoPKBySessionId({ liveSessionId, videoPK }) {
     const sql = `
             UPDATE CHZZK_LIVE_LOGS
             SET video_pk = $1
@@ -156,7 +156,7 @@ export default class LiveLogRepository {
         C.channel_image_url,
 
         V.id AS video_pk,
-        V.video_id,
+        V.video_no,
         V.video_title,
         V.video_thumbnail_url,
         V.video_duration,
@@ -203,7 +203,7 @@ export default class LiveLogRepository {
         C.channel_image_url,
 
         V.id AS video_pk,
-        V.video_id,
+        V.video_no,
         V.video_title,
         V.video_thumbnail_url,
         V.video_duration,

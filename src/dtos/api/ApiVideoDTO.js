@@ -1,5 +1,5 @@
 class ApiVideoDTO {
-  #videoId;
+  #videoNo;
   #videoTitle;
   #publishDate;
   #thumbnailImageUrl;
@@ -12,7 +12,7 @@ class ApiVideoDTO {
     }
     const videoData = apiContent.data[0];
 
-    this.#videoId = videoData.videoId ?? null;
+    this.#videoNo = videoData.videoNo ?? null;
     this.#videoTitle = videoData.videoTitle ?? null;
     this.#publishDate = videoData.publishDate ?? null;
     this.#thumbnailImageUrl = videoData.thumbnailImageUrl ?? null;
@@ -22,7 +22,7 @@ class ApiVideoDTO {
 
   toDomainFields() {
     return {
-      videoId: this.#videoId,
+      videoNo: this.#videoNo,
       videoTitle: this.#videoTitle,
       publishDate: this.#publishDate,
       videoThumbnailUrl: this.#thumbnailImageUrl,

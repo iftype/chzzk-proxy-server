@@ -107,8 +107,8 @@ class LiveLogService {
     return await this.#liveLogRepository.findLastLiveLog({ channelPK });
   }
 
-  async updateVideoIdBySessionId({ sessionId, videoPK }) {
-    return await this.#liveLogRepository.updateVideoIdBySessionId({
+  async updateVideoPKBySessionId({ sessionId, videoPK }) {
+    return await this.#liveLogRepository.updateVideoPKBySessionId({
       liveSessionId: sessionId,
       videoPK,
     });

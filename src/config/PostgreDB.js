@@ -1,5 +1,4 @@
 import pg from "pg";
-import "dotenv/config";
 class PostgreDB {
   pool;
 
@@ -61,7 +60,7 @@ class PostgreDB {
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS CHZZK_VIDEOS (
           id SERIAL PRIMARY KEY,
-          video_id VARCHAR(100) NOT NULL UNIQUE,
+          video_no VARCHAR(100) NOT NULL UNIQUE,
           video_title TEXT,
           channel_pk INT REFERENCES CHZZK_CHANNELS(id),
           publish_date TIMESTAMP WITH TIME ZONE,

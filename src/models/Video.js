@@ -1,7 +1,7 @@
 class Video {
   #videoPK;
   #channelPK;
-  #videoId;
+  #videoNo;
   #videoTitle;
   #videoThumbnailUrl;
   #videoDuration;
@@ -9,7 +9,7 @@ class Video {
 
   constructor({
     videoPK = null,
-    videoId,
+    videoNo,
     videoTitle,
     channelPK = null,
     publishDate,
@@ -17,7 +17,7 @@ class Video {
     videoDuration,
   } = {}) {
     this.#videoPK = videoPK;
-    this.#videoId = videoId;
+    this.#videoNo = videoNo;
     this.#videoTitle = videoTitle;
     this.#channelPK = channelPK;
     this.#publishDate = publishDate;
@@ -29,15 +29,15 @@ class Video {
     return this.#videoPK;
   }
 
-  get videoId() {
-    return this.#videoId;
+  get videoNo() {
+    return this.#videoNo;
   }
 
   static fromDBRow(row) {
     if (!row) return new Video({});
     return new Video({
       videoPK: row.id,
-      videoId: row.video_id,
+      videoNo: row.video_no,
       videoTitle: row.video_title,
       channelPK: row.channel_pk,
       publishDate: row.publish_date,
@@ -48,7 +48,7 @@ class Video {
 
   toDB() {
     return {
-      video_id: this.#videoId,
+      video_no: this.#videoNo,
       video_title: this.#videoTitle,
       channel_pk: this.#channelPK,
       publish_date: this.#publishDate,

@@ -9,9 +9,9 @@ class VideoRepository {
   async upsertVideo(video) {
     const sql = `
             INSERT INTO CHZZK_VIDEOS 
-                (video_id, video_title, channel_pk, publish_date, video_thumbnail_url, video_duration)
+                (video_no, video_title, channel_pk, publish_date, video_thumbnail_url, video_duration)
             VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT (video_id) 
+            ON CONFLICT (video_no) 
             DO UPDATE SET 
                 video_title = EXCLUDED.video_title,
                 channel_pk = EXCLUDED.channel_pk,
@@ -22,7 +22,7 @@ class VideoRepository {
         `;
     const dbData = video.toDB();
     const binds = [
-      dbData.video_id,
+      dbData.video_no,
       dbData.video_title,
       dbData.channel_pk,
       dbData.publish_date,
@@ -39,7 +39,7 @@ class VideoRepository {
   }
 
   async findByVideoId(videoId) {
-    const sql = `SELECT * FROM CHZZK_VIDEOS WHERE video_id = $1 LIMIT 1`;
+    const sql = `SELECT * FROM CHZZK_VIDEOS WHERE video_no = $1 LIMIT 1`;
     try {
       const res = await this.pool.query(sql, [videoId]);
       return res.rows[0] ? Video.fromDBRow(res.rows[0]) : null;

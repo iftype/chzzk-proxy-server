@@ -23,8 +23,8 @@ class VideoService {
     const video = new Video({ ...videoData, channelPK });
     const updatedVideo = await this.#videoRepository.upsertVideo(video);
     if (updatedVideo) {
-      const { videoId, videoPK } = updatedVideo;
-      this.#videoPKCache.set(videoId, videoPK);
+      const { videoNo, videoPK } = updatedVideo;
+      this.#videoPKCache.set(videoNo, videoPK);
     }
     return updatedVideo;
   }
