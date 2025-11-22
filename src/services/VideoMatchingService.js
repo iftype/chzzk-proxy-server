@@ -1,5 +1,5 @@
 class VideoMatchingService {
-  static VIEDO_MATCH_STAND = 24 * 60 * 60 * 1000;
+  static VIEDO_MATCH_STAND = 10 * 60 * 60 * 1000;
 
   #liveLogService;
   #videoService;
