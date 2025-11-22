@@ -25,7 +25,7 @@ class VideoMatchingService {
       new Date(publishDate).getTime() - new Date(close_date).getTime() <
       VideoMatchingService.VIEDO_MATCH_STAND;
 
-    if (!matchedTitle && !matchedDate) {
+    if (!matchedTitle || !matchedDate) {
       return { matched: false };
     }
 
