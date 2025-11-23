@@ -104,9 +104,9 @@ class LiveLogService {
     this.#liveLogCache.set(channelId, logModel.toCache());
   }
 
-  async findLastLogByChannelId(channelId) {
+  async findLastCloseLogByChannelId(channelId) {
     const { channelPK } = await this.#channelService.getChannelPK(channelId);
-    return await this.#liveLogRepository.findLastLiveLog({ channelPK });
+    return await this.#liveLogRepository.findLastCloseLiveLog({ channelPK });
   }
 
   async updateVideoPKBySessionId({ sessionId, videoPK }) {

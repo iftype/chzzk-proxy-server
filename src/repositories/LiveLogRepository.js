@@ -58,7 +58,7 @@ export default class LiveLogRepository {
             SELECT *
             FROM CHZZK_LIVE_LOGS
             WHERE channel_pk = $1
-              AND video_pk IS NULL
+              AND live_close_date IS NULL
             ORDER BY log_time DESC
             LIMIT 1
         `;
@@ -67,6 +67,24 @@ export default class LiveLogRepository {
       return res.rows[0] ? LiveLog.fromDBRow(res.rows[0]) : null;
     } catch (err) {
       console.error("[LiveLogRepo] findLastLiveLog 실패:", err.message);
+      return null;
+    }
+  }
+
+  async findLastCloseLiveLog({ channelPK }) {
+    const sql = `
+            SELECT *
+            FROM CHZZK_LIVE_LOGS
+            WHERE channel_pk = $1
+              AND video_pk IS NULL
+            ORDER BY log_time DESC
+            LIMIT 1
+        `;
+    try {
+      const res = await this.#pool.query(sql, [channelPK]);
+      return res.rows[0] ? LiveLog.fromDBRow(res.rows[0]) : null;
+    } catch (err) {
+      console.error("[LiveLogRepo] findLastCloseLiveLog 실패:", err.message);
       return null;
     }
   }

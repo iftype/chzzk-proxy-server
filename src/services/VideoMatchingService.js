@@ -11,7 +11,7 @@ class VideoMatchingService {
 
   async matchAndSave(channelId) {
     const videoDto = await this.#videoService.getVideoFromApi(channelId);
-    const lastLog = await this.#liveLogService.findLastLogByChannelId(channelId);
+    const lastLog = await this.#liveLogService.findLastCloseLogByChannelId(channelId);
 
     if (!videoDto || !lastLog) {
       return { matched: false };
