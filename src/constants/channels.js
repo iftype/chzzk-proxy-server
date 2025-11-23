@@ -4,5 +4,6 @@ const CHANNELS = Object.freeze({
   DOPA: process.env.DOPA_CHANNEL_ID,
   MONSTRAT: process.env.MONSTRAT_CHANNEL_ID,
   GOOB: process.env.GOOB_CHANNEL_ID,
+  STEELO: process.env.STEELO_CHANNEL_ID,
 });
 export default CHANNELS;
